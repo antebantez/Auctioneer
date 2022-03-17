@@ -22,18 +22,15 @@ server.listen(3000, () => {
 // data
 const util = require("util");
 const sqlite3 = require("sqlite3");
-const db = new sqlite3.Database("./database/foodcourt-express.db");
+const db = new sqlite3.Database("./SQL/database/auctioneer.db");
 db.all = util.promisify(db.all);
 db.run = util.promisify(db.run);
-
-const menuItems = require("./menu-items.json");
-const req = require("express/lib/request");
 
 // REST API
 
 // GET (read, select) all
-server.get("/data/menu-items", async (request, response) => {
-  let query = "SELECT * FROM menuitems";
+server.get("/data/products", async (request, response) => {
+  let query = "SELECT * FROM products";
   let result = await db.all(query);
   response.json(result);
 });
