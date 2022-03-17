@@ -8,10 +8,10 @@
     "start": "nodemon server.js"
   },
   "author": "antebantez",
+  "license": "ISC",
   "dependencies": {
     "express": "^4.17.3",
     "express-session": "^1.17.2",
-    "mongoose": "^6.2.6",
     "sqlite3": "^5.0.2"
   },
   "devDependencies": {
