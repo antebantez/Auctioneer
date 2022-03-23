@@ -22,6 +22,7 @@ server.listen(3000, () => {
 // data
 const util = require("util");
 const sqlite3 = require("sqlite3");
+const req = require("express/lib/request");
 const db = new sqlite3.Database("./SQL/database/auctioneer.db");
 db.all = util.promisify(db.all);
 db.run = util.promisify(db.run);
@@ -32,12 +33,10 @@ db.run = util.promisify(db.run);
 //1
 //4
 server.get("/data/products", async (request, response) => {
-  let query = `SELECT p.name, p.image, MAX(b.highestBid)
-FROM products p
-LEFT JOIN bids b ON p.id = b.auctionId
-WHERE b.highestBid IS NOT NULL
-GROUP BY p.name
-ORDER BY p.name;`;
+  let query = `SELECT products.name, products.image, bids.highestBid
+FROM auctions
+JOIN  products ON auctions.product = products.id
+JOIN bids ON bids.auctionId = auctions.id;`;
   let result = await db.all(query);
   response.json(result);
 });
@@ -48,11 +47,9 @@ ORDER BY p.name;`;
 //2
 //5
 server.get("/data/auction/:id", async (request, response) => {
-  // request.params.id === 2
-
   let query = `SELECT products.name, bids.highestBid, products.startPrice, products.description, products.image, users.name, categories.categoryName
 FROM auctions
-Join  products ON auctions.product = products.id
+JOIN  products ON auctions.product = products.id
 JOIN bids ON bids.auctionId = auctions.id
 JOIN users ON products.sellerId = users.id
 JOIN categories ON products.category = categories.id
@@ -67,9 +64,9 @@ WHERE auctions.id = ?`;
 server.get("/data/search/:keyword", async (request, response) => {
   // request.params.id === 2
 
-  let query = `SELECT products.name, bids.highestBid,  products.image
+  let query = `SELECT products.name, bids.highestBid, products.image
 FROM auctions
-Join  products ON auctions.product = products.id
+JOIN products ON auctions.product = products.id
 JOIN bids ON bids.auctionId = auctions.id
 
 WHERE products.name like(?);`;
@@ -89,13 +86,6 @@ VALUES (?,?,?)`;
     request.body.email,
     request.body.password,
   ]);
-  response.json({ result: "One row created" });
-});
-
-// POST (create, insert)
-server.post("/data/menu-items", async (request, response) => {
-  let query = "INSERT INTO menuitems (name, price) VALUES(?,?)";
-  await db.run(query, [request.body.name, request.body.price]);
   response.json({ result: "One row created" });
 });
 
@@ -135,13 +125,13 @@ server.get("/data/login", async (request, response) => {
     let result = await db.all(query, [
       request.session.customer.email,
       request.session.customer.password,
-      request.session.customer.id,
     ]);
 
     if (result.length > 0) {
       response.json({
         name: request.session.customer.name,
         email: request.session.customer.email,
+        id: request.session.customer.id,
       });
     } else {
       response.json({ loggedIn: false });
@@ -150,61 +140,71 @@ server.get("/data/login", async (request, response) => {
     response.json({ loggedIn: false });
   }
 });
-
+//logga ut
 server.delete("/data/login", async (request, response) => {
   delete request.session.customer;
   response.json({ loggedIn: false });
 });
 
 server.put("/data/auction/:id", async (request, response) => {
-  let query = `UPDATE bids
+  if (request.session.customer) {
+    let query = `UPDATE bids
 SET highestBid =
 CASE 
-WHEN highestBid < ? THEN ?
+WHEN highestBid < ? AND NOT auctions.auctionHolder = ? THEN ?
 ELSE highestBid
 END
-WHERE bids.auctionId = ?`;
-  let result = await db.run(query, [
-    request.body.bid,
-    request.body.bid,
-    request.params.id,
-  ]);
+WHERE bids.auctionId = ?;`;
+    await db.run(query, [
+      request.body.bid,
+      request.session.customer.id,
+      request.body.bid,
+      request.params.id,
+    ]);
 
-  response.send("One row updated");
+    let changeBidder = `UPDATE bids SET bidder = ? WHERE bids.auctionId = ?`;
+    await db.run(changeBidder, [
+      request.session.customer.id,
+      request.params.id,
+    ]);
+    response.send("One row updated");
+  } else {
+    console.log("SEAN TAR NR 10");
+  }
 });
 
 //11
-server.post("/data/products", async (request, response) => {
+//9
+//12
+//13
+server.post("/data/auctions", async (request, response) => {
   if (request.session.customer) {
-    let query = `INSERT INTO products (name, startPrice, description, image, reservationPrice, category)
-VALUES (?,?,?,?,?,?)`;
+    let query = `INSERT INTO products (name, startPrice, description, image, reservationPrice, category,  startTime, endTime, sellerId)
+VALUES (?,?,?,?,?,?,?,?,?)`;
     await db.run(query, [
       request.body.name,
       request.body.startPrice,
       request.body.description,
       request.body.image,
-      request.session.customer.id,
       request.body.reservationPrice,
       request.body.category,
+      request.body.startTime,
+      request.body.endTime,
+      request.session.customer.id,
     ]);
     response.json({ result: "One row created" });
   } else {
     response.json({ result: "U done GOOF" });
   }
+  let query = `INSERT INTO auctions (product, auctionHolder)
+VALUES ((SELECT id FROM products WHERE id = (
+    SELECT MAX(id) FROM products)), ?)`;
+  await db.run(query, [request.session.customer.id]);
+
+  let addHighestBid = `INSERT INTO bids (auctionId,highestBid)
+VALUES ((SELECT id FROM auctions WHERE id = (
+    SELECT MAX(id) FROM auctions)), ?)`;
+  await db.run(addHighestBid, [0]);
 });
 
 //Lägga till
-server.post("/data/auctions", async (request, response) => {
-  let query = `INSERT INTO auctions (name, startPrice, description, image, sellerId, reservationPrice, category)
-VALUES (?,?,?,?,?,?,?)`;
-  await db.run(query, [
-    request.body.name,
-    request.body.startPrice,
-    request.body.description,
-    request.body.image,
-    request.body.sellerId,
-    request.body.reservationPrice,
-    request.session.customer.id,
-  ]);
-  response.json({ result: "One row created" });
-});
