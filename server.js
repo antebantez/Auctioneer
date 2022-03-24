@@ -181,19 +181,20 @@ server.put("/data/auction/:auctionId", async (request, response) => {
     let query = `SELECT highestBid FROM bids WHERE bids.auctionId = ?`;
     let currentBid = await db.all(query, [request.params.auctionId]);
 
-    query = `SELECT bidder FROM bids WHERE bids.auctionId = ?`;
-    let bidder = await db.all(query, [request.params.auctionId]);
+    /*query = `SELECT bidder FROM bids WHERE bids.auctionId = ?`;
+    let bidder = await db.all(query, [request.params.auctionId]);*/
 
     query = `SELECT auctionHolder FROM auctions WHERE auctions.id = ?`;
     let auctionHolder = await db.all(query, [request.params.auctionId]);
-    console.log(bidder, currentBid, auctionHolder);
-    console.log(request.body.bid);
+    //Convert highestBid from array to clean integer
+    console.log(currentBid[0].highestBid);
+    console.log(auctionHolder[0].auctionHolder);
+    console.log(request.session.customer.id);
     if (
-      request.body.bid > currentBid.highestBid //||
-      // !bidder === request.session.customer.id ||
-      // !auctionHolder === request.session.customer.id
+      request.body.bid > currentBid[0].highestBid ||
+      /*!bidder[0].bidder == request.session.customer.id ||*/
+      auctionHolder[0].auctionHolder != request.session.customer.id
     ) {
-      console.log("hej");
       let updateBid = `UPDATE bids
         SET highestBid = ?,
         bidder = ?
@@ -203,7 +204,7 @@ server.put("/data/auction/:auctionId", async (request, response) => {
         request.session.customer.id,
         request.params.auctionId,
       ]);
-      console.log(bidder, currentBid, auctionHolder);
+      console.log(currentBid, auctionHolder);
       response.json({ bidCreated: true });
     } else {
       response.json({ bidCreated: false });
