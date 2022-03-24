@@ -147,7 +147,7 @@ server.delete("/data/login", async (request, response) => {
   delete request.session.customer;
   response.json({ loggedIn: false });
 });
-
+/*
 // 8 Som användare vill jag kunna lägga (högre än nuvarande) bud på auktionsobjekt på dess detaljsida.
 server.put("/data/auction/:id", async (request, response) => {
   if (request.session.customer) {
@@ -174,7 +174,45 @@ WHERE bids.auctionId = ?;`;
   } else {
     console.log("SEAN TAR NR 10");
   }
+});*/
+/////////////////////////////KOPIA/////////////////////////////
+server.put("/data/auction/:auctionId", async (request, response) => {
+  if (request.session.customer) {
+    let query = `SELECT highestBid FROM bids WHERE bids.auctionId = ?`;
+    let currentBid = await db.all(query, [request.params.auctionId]);
+
+    query = `SELECT bidder FROM bids WHERE bids.auctionId = ?`;
+    let bidder = await db.all(query, [request.params.auctionId]);
+
+    query = `SELECT auctionHolder FROM auctions WHERE auctions.id = ?`;
+    let auctionHolder = await db.all(query, [request.params.auctionId]);
+    console.log(bidder, currentBid, auctionHolder);
+    console.log(request.body.bid);
+    if (
+      request.body.bid > currentBid.highestBid //||
+      // !bidder === request.session.customer.id ||
+      // !auctionHolder === request.session.customer.id
+    ) {
+      console.log("hej");
+      let updateBid = `UPDATE bids
+        SET highestBid = ?,
+        bidder = ?
+        WHERE bids.auctionId = ?;`;
+      await db.run(updateBid, [
+        request.body.bid,
+        request.session.customer.id,
+        request.params.auctionId,
+      ]);
+      console.log(bidder, currentBid, auctionHolder);
+      response.json({ bidCreated: true });
+    } else {
+      response.json({ bidCreated: false });
+    }
+  } else {
+    console.log("SEAN TAR NR 10");
+  }
 });
+///////////////////////////////////////////////////////////////////////////////
 
 //Lägga till
 //9 Som användare vill jag kunna skapa nya auktionsobjekt.
