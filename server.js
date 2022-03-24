@@ -147,53 +147,20 @@ server.delete("/data/login", async (request, response) => {
   delete request.session.customer;
   response.json({ loggedIn: false });
 });
-/*
-// 8 Som användare vill jag kunna lägga (högre än nuvarande) bud på auktionsobjekt på dess detaljsida.
-server.put("/data/auction/:id", async (request, response) => {
-  if (request.session.customer) {
-    let query = `UPDATE bids
-SET highestBid =
-CASE 
-WHEN highestBid < ? AND NOT auctions.auctionHolder = ? THEN ?
-ELSE highestBid
-END
-WHERE bids.auctionId = ?;`;
-    await db.run(query, [
-      request.body.bid,
-      request.session.customer.id,
-      request.body.bid,
-      request.params.id,
-    ]);
 
-    let changeBidder = `UPDATE bids SET bidder = ? WHERE bids.auctionId = ?`;
-    await db.run(changeBidder, [
-      request.session.customer.id,
-      request.params.id,
-    ]);
-    response.send("One row updated");
-  } else {
-    console.log("SEAN TAR NR 10");
-  }
-});*/
-/////////////////////////////KOPIA/////////////////////////////
+//8 Som användare vill jag kunna lägga (högre än nuvarande) bud på auktionsobjekt på dess detaljsida.
+//10 Som användare ska jag inte kunna lägga bud på mina egna auktionsobjekt.
 server.put("/data/auction/:auctionId", async (request, response) => {
   if (request.session.customer) {
     let query = `SELECT highestBid FROM bids WHERE bids.auctionId = ?`;
     let currentBid = await db.all(query, [request.params.auctionId]);
 
-    /*query = `SELECT bidder FROM bids WHERE bids.auctionId = ?`;
-    let bidder = await db.all(query, [request.params.auctionId]);*/
-
     query = `SELECT auctionHolder FROM auctions WHERE auctions.id = ?`;
     let auctionHolder = await db.all(query, [request.params.auctionId]);
-    //Convert highestBid from array to clean integer
-    console.log(currentBid[0].highestBid);
-    console.log(auctionHolder[0].auctionHolder);
-    console.log(request.session.customer.id);
+
     if (
-      request.body.bid > currentBid[0].highestBid ||
-      /*!bidder[0].bidder == request.session.customer.id ||*/
-      auctionHolder[0].auctionHolder != request.session.customer.id
+      request.body.bid > currentBid[0].highestBid &&
+      auctionHolder[0].auctionHolder !== request.session.customer.id
     ) {
       let updateBid = `UPDATE bids
         SET highestBid = ?,
@@ -204,16 +171,14 @@ server.put("/data/auction/:auctionId", async (request, response) => {
         request.session.customer.id,
         request.params.auctionId,
       ]);
-      console.log(currentBid, auctionHolder);
-      response.json({ bidCreated: true });
+      response.send("Your bid has been placed");
     } else {
-      response.json({ bidCreated: false });
+      response.send("Your bid is not valid");
     }
   } else {
-    console.log("SEAN TAR NR 10");
+    response.send("You have to log in to place a bid!!!");
   }
 });
-///////////////////////////////////////////////////////////////////////////////
 
 //Lägga till
 //9 Som användare vill jag kunna skapa nya auktionsobjekt.
