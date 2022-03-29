@@ -215,7 +215,8 @@ VALUES ((SELECT id FROM auctions WHERE id = (
   await db.run(addHighestBid, [0]);
 });
 
-//16 Ongoing
+//16 Som besökare vill jag kunna se auktioner baserat på status (pågående, avslutade, sålda, ej sålda).
+//Ongoing
 server.get("/data/status/ongoing", async (request, response) => {
   let query = `SELECT products.name, products.image, bids.highestBid
                     FROM auctions
