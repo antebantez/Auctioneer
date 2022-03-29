@@ -215,6 +215,54 @@ VALUES ((SELECT id FROM auctions WHERE id = (
   await db.run(addHighestBid, [0]);
 });
 
+//16 Ongoing
+server.get("/data/status/ongoing", async (request, response) => {
+  let query = `SELECT products.name, products.image, bids.highestBid
+                    FROM auctions
+                    JOIN  products ON auctions.product = products.id
+                    JOIN bids ON bids.auctionId = auctions.id
+                    WHERE products.endTime > (SELECT datetime('now','localtime'));`;
+  let result = await db.all(query);
+  response.json(result);
+});
+
+//16 Completed
+server.get("/data/status/completed", async (request, response) => {
+  let query = `SELECT products.name, products.image, bids.highestBid
+                    FROM auctions
+                    JOIN  products ON auctions.product = products.id
+                    JOIN bids ON bids.auctionId = auctions.id
+                    WHERE products.endTime < (SELECT datetime('now','localtime'));`;
+  let result = await db.all(query);
+  response.json(result);
+});
+
+//16 Sold
+server.get("/data/status/sold", async (request, response) => {
+  let query = `SELECT products.name, products.image, bids.highestBid, products.endTime AS Expired
+                    FROM auctions
+                    JOIN  products ON auctions.product = products.id
+                    JOIN bids ON bids.auctionId = auctions.id
+                    WHERE NOT bids.highestBid = 0 
+                    AND bids.highestBid > products.reservationPrice 
+                    AND products.endTime < (SELECT datetime('now','localtime'));`;
+  let result = await db.all(query);
+  response.json(result);
+});
+
+//16 Not sold
+server.get("/data/status/not-sold", async (request, response) => {
+  let query = `SELECT products.name, products.image, bids.highestBid, products.endTime
+                    FROM auctions
+                    JOIN  products ON auctions.product = products.id
+                    JOIN bids ON bids.auctionId = auctions.id
+                    WHERE bids.highestBid = 0 
+                    OR bids.highestBid < products.reservationPrice 
+                    AND products.endTime < (SELECT datetime('now','localtime'));`;
+  let result = await db.all(query);
+  response.json(result);
+});
+
 //17 Som användare vill jag kunna se en lista med mina egna auktionsobjekt.
 server.get("/data/my-auctions", async (request, response) => {
   let query = `SELECT products.name, products.image, bids.highestBid
