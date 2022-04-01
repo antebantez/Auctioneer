@@ -1,0 +1,96 @@
+1. Som besökare vill jag kunna se sammanfattade auktionsobjekt som en lista.
+2. Som besökare vill jag kunna se detaljer för varje auktionsobjekt.
+3. Som besökare vill jag kunna söka på auktioner baserat på vad jag skriver i ett sökfält.
+4. Som besökare vill jag kunna se nuvarande bud på auktionsobjekt i listvyer
+5. Som besökare vill jag kunna se nuvarande bud på auktionsobjekt i detaljsidor.
+6. Som besökare vill jag kunna registrera ett nytt konto och bli användare.
+7. Som användare vill jag kunna logga in.
+8. Som användare vill jag kunna lägga (högre än nuvarande) bud på auktionsobjekt på dess detaljsida.
+9. Som användare vill jag kunna skapa nya auktionsobjekt.
+10. Som användare ska jag inte kunna lägga bud på mina egna auktionsobjekt.
+11. Som användare vill jag att auktionsobjekt ska innehålla minst titel, beskrivning, starttid, sluttid och bild(er)
+12. Som användare vill jag kunna sätta ett utgångspris på mina auktionsobjekt.
+13. Som användare vill jag kunna sätta ett dolt reservationspris på mina auktionsobjekt. (om bud ej uppnått 
+reservationspris när auktionen avslutas så säljs objektet inte).
+
+1. As a user I want to see auctions as a list
+GIVEN I have my web browser open
+WHEN I enter the home page
+THEN auction objects are displayed
+
+2. As a user I want to view details about an auction
+GIVEN I am on the home page
+WHEN I select an auction
+THEN redirect to the details page
+AND details about the auction are displayed
+
+3. As a user I want to search for a specific product
+GIVEN I am on the web site
+WHEN I enter a search term in the search bar
+THEN the products resulting from that search are displayed
+
+4. As a user I want to be able to see the current bid of auction objects
+GIVEN I have my web browser open
+WHEN I enter the home page
+THEN auction objects current bid are displayed
+
+5. As a user I want to be able to see the current bid of an auction object
+GIVEN I am on the home page
+WHEN I select an auction
+THEN redirect to the details page
+AND show the current bid for the auction
+
+6. As a user I want to be able to register an account
+GIVEN I am on the web site
+WHEN I click on the register button
+THEN prompt to enter user credentials
+AND ask for user name
+AND ask for password
+AND ask for email
+WHEN the user enters required information
+THEN create account
+
+7. As a user I want to log into my account.
+GIVEN I have an account
+WHEN I click on the login button
+THEN ask for user name and password
+WHEN I enter the user name and password
+AND I click on login
+THEN validate the login
+
+8. As a user I want to be able to place bids on auction objects
+GIVEN I am the details page
+WHEN I enter an amount
+AND click the "place bid" button
+THEN check if the bid is higher than the current highest bid
+AND update the highest bid
+
+9. As a user I want to be able to create new auctions
+GIVEN I am logged in as a user
+AND I am on the home page
+WHEN I click on the "create auction" button
+THEN present a form to enter auction information
+AND I fill in the information of the auction
+WHEN I click confirm
+THEN the auction is created
+
+10. As a user I shall not be able to place bids on my own auctions
+GIVEN I created the auction
+WHEN I try to place a bid on the auction
+THEN reject the bid
+
+11. As a user I want an auction to contain atleast a title, description, start time, end time and images
+-
+
+12. As a user I want to set a starting price for my auctions
+GIVEN I create an auction
+AND I want to set a starting price
+WHEN I enter a starting price
+THEN set the starting price
+
+13. As a user I want to set a reservation price for my auction
+GIVEN I create an auction
+AND I want to set a reservation price
+WHEN I enter a reservation price
+THEN set the reservation price
+AND make sure it is hidden from other users
